@@ -1,0 +1,1488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Christmas Cheer</title>
+  <style>
+    :root { --bg: #fff8eb; --panel: #fff; --ink: #243b35; --accent: #a82732; --soft: #f3ead6; --line: #bdb09a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif; }
+    body[data-theme=santa] { --bg: #ffe7eb; --ink: #711d29; --accent: #b51c36; --soft: #ffe0e5; --line: #d38b96; }
+    body[data-theme=tree] { --bg: #e4f3e7; --ink: #16452c; --accent: #236339; --soft: #d8ebd6; --line: #82aa83; }
+    body[data-theme=frost] { --bg: #e8f4ff; --ink: #193d62; --accent: #285e9e; --soft: #d8eafa; --line: #8aaac8; }
+    header, main { max-width: 900px; margin: auto; padding: 18px; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    h1 { font-size: clamp(24px, 5vw, 40px); margin: 0; }
+    h2 { line-height: 1.35; }
+    button, input { font: inherit; color: inherit; touch-action: manipulation; }
+    button { cursor: pointer; background: var(--panel); border: 2px solid var(--line); border-radius: 15px; padding: 14px; font-weight: 750; min-height: 48px; }
+    button:hover, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    button[aria-pressed=true] { background: var(--accent); color: white; border-color: var(--accent); }
+    button:disabled { opacity: .65; cursor: default; }
+    .card { background: var(--panel); border: 2px solid var(--line); border-radius: 24px; padding: clamp(16px, 4vw, 30px); box-shadow: 0 12px 32px #00000010; }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; }
+    .row > button { flex: 1 1 130px; }
+    .hero { text-align: center; font-size: clamp(30px, 6vw, 55px); padding: 16px 0; border-radius: 18px; margin-bottom: 12px; transition: background-color 0.3s; }
+    .garland { text-align: center; letter-spacing: 7px; background: var(--soft); padding: 12px; font-size: 24px; }
+    .primary { background: var(--accent); color: white; border-color: var(--accent); width: 100%; margin-top: 20px; }
+    .hidden { display: none !important; }
+    .badge { background: var(--soft); border-radius: 14px; padding: 10px 14px; font-weight: 800; }
+    #options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    #feedback { min-height: 45px; font-weight: 800; padding: 12px 0; line-height: 1.5; }
+    #passage { background: var(--soft); padding: 18px 20px; border-radius: 16px; line-height: 1.75; margin-bottom: 16px; border-left: 5px solid var(--accent); }
+    #passage h3 { margin: 0 0 8px 0; font-size: 1.15rem; color: var(--accent); }
+    #passage p { margin: 0 0 10px 0; }
+    #passage p:last-child { margin-bottom: 0; }
+
+    .mode-banner {
+      background: var(--soft);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 750;
+      margin-bottom: 12px;
+      text-align: center;
+      font-size: 0.98rem;
+    }
+
+    /* Direct inline word reveal typing */
+    #reveal-box {
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 20px 16px;
+      background: var(--soft);
+      border: 3px solid var(--line);
+      border-radius: 18px;
+      margin-bottom: 10px;
+      cursor: text;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #reveal-box:focus-within, #reveal-box.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+    #reveal-hidden-input {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: text;
+      border: 0;
+      background: transparent;
+      color: transparent;
+      caret-color: transparent;
+      pointer-events: none;
+    }
+    .char-slot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: clamp(34px, 6vw, 48px);
+      height: clamp(44px, 8vw, 60px);
+      font-size: clamp(22px, 5vw, 34px);
+      font-weight: 900;
+      background: var(--panel);
+      border-bottom: 4px solid var(--line);
+      border-radius: 10px;
+      user-select: none;
+    }
+    .char-slot.clue {
+      background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+      color: var(--accent);
+      border-bottom: 4px solid var(--accent);
+    }
+    .char-slot.typed { color: var(--ink); border-bottom-color: var(--accent); }
+    .char-slot.cursor { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .char-slot.good { background: #ddf5dd; color: #16452c; border-bottom-color: #236339; }
+    .char-space { width: clamp(14px, 3vw, 24px); }
+    .reveal-hint { text-align: center; font-size: 0.92rem; opacity: 0.85; margin: 4px 0 12px; font-weight: 600; }
+
+    /* Onscreen tablet keyboard */
+    #onscreen-kb {
+      background: var(--soft);
+      border: 2px solid var(--line);
+      border-radius: 18px;
+      padding: 12px 8px;
+      margin: 10px 0 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      user-select: none;
+    }
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: clamp(4px, 1.2vw, 8px);
+    }
+    .kb-key {
+      flex: 1 1 0;
+      max-width: 56px;
+      min-width: 28px;
+      min-height: 50px;
+      padding: 0;
+      border-radius: 12px;
+      font-size: clamp(16px, 3.2vw, 21px);
+      font-weight: 800;
+      background: var(--panel);
+      border: 2px solid var(--line);
+      box-shadow: 0 3px 0 var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.06s;
+    }
+    .kb-key:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--line);
+    }
+    .kb-key.kb-wide {
+      flex: 1.6 1 0;
+      max-width: 96px;
+      font-size: clamp(14px, 2.6vw, 17px);
+    }
+    .kb-key.kb-submit {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* Unscramble tiles */
+    #unscramble-answer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      padding: 18px;
+      background: var(--soft);
+      border-radius: 18px;
+      margin-bottom: 14px;
+      min-height: 82px;
+    }
+    #unscramble-tiles {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .tile-btn {
+      width: clamp(46px, 8vw, 58px);
+      height: clamp(46px, 8vw, 58px);
+      font-size: 1.35rem;
+      font-weight: 900;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--panel);
+      border: 2px solid var(--accent);
+      box-shadow: 0 4px 0 var(--line);
+    }
+    .tile-btn:disabled { opacity: 0.25; box-shadow: none; }
+
+    /* True / False cards */
+    .tf-btn {
+      font-size: 1.25rem;
+      padding: 22px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    /* Sorter bins */
+    .bin { flex: 1; min-width: 180px; min-height: 140px; background: var(--soft); border: 3px dashed var(--line); border-radius: 18px; padding: 15px; margin-top: 12px; }
+    .bin button { display: block; width: 100%; margin: 6px 0; }
+
+    /* Drag & Drop Matching */
+    #match-pool {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .match-word {
+      flex: 1 1 150px;
+      max-width: 240px;
+      background: var(--panel);
+      border: 2px solid var(--accent);
+      box-shadow: 0 4px 0 var(--line);
+      font-size: 1.1rem;
+    }
+    .match-word.placed {
+      opacity: 0.35;
+      box-shadow: none;
+      border-style: dashed;
+    }
+    #match-targets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .match-target {
+      background: var(--soft);
+      border: 3px dashed var(--line);
+      border-radius: 18px;
+      padding: 16px 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 155px;
+      cursor: pointer;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    .match-target:hover, .match-target:focus-visible {
+      border-color: var(--accent);
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .match-target.matched {
+      background: #ddf5dd;
+      border: 3px solid #236339;
+      color: #16452c;
+      cursor: default;
+    }
+    .match-clue-icon {
+      font-size: clamp(34px, 6vw, 48px);
+      line-height: 1.1;
+    }
+    .match-clue-text {
+      font-weight: 750;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+    .match-slot-pill {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: var(--panel);
+      border: 2px dashed var(--line);
+      font-weight: 800;
+      font-size: 0.95rem;
+      opacity: 0.75;
+    }
+    .match-target.matched .match-slot-pill {
+      background: #236339;
+      color: #fff;
+      border-style: solid;
+      border-color: #236339;
+      opacity: 1;
+    }
+
+    .selected { outline: 4px solid var(--accent); }
+    .good { background: #ddf5dd !important; color: #16452c !important; border-color: #236339 !important; }
+
+    /* Final screen styling */
+    .end-banner { text-align: center; padding: 8px 0 16px; }
+    .rank-pill {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      margin-bottom: 12px;
+    }
+    .score-box {
+      background: var(--soft);
+      border: 2px solid var(--line);
+      border-radius: 20px;
+      padding: 20px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .score-big { font-size: clamp(32px, 7vw, 52px); font-weight: 900; color: var(--accent); margin: 6px 0; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .stat-card { background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 14px 10px; text-align: center; }
+    .stat-val { font-size: 1.4rem; font-weight: 900; }
+    .stat-lbl { font-size: 0.85rem; opacity: 0.8; font-weight: 700; margin-top: 4px; }
+
+    #celebration { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+    #celebration span { position: absolute; top: -60px; font-size: 35px; animation: fall 2.8s linear forwards; }
+    @keyframes fall { to { transform: translateY(110vh) rotate(70deg); } }
+    @media(prefers-reduced-motion: reduce) { #celebration span { animation: none; top: 30%; } }
+    @media(max-width: 600px) {
+      header { flex-wrap: wrap; }
+      #options { grid-template-columns: 1fr; }
+      #match-targets { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .kb-key { min-height: 44px; border-radius: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="garland" aria-hidden="true">🎄 🔔 ⭐ 🎀 🦌 🎅 🧝 🎁 🎄</div>
+  <header>
+    <h1>🎄 Christmas Cheer</h1>
+    <button id="home">🏠 Menu</button>
+  </header>
+  <main>
+    <section id="menu" class="card">
+      <div class="hero" aria-hidden="true">🎅 🦌 🧝 🎄 🎁</div>
+      <h2>A little Christmas magic!</h2>
+      <h3>Choose your theme</h3>
+      <div class="row" id="themes">
+        <button data-theme="regular" aria-pressed="true">🎁 Regular</button>
+        <button data-theme="santa" aria-pressed="false">🎅 Santa Red</button>
+        <button data-theme="tree" aria-pressed="false">🎄 Christmas Tree</button>
+        <button data-theme="frost" aria-pressed="false">❄️ Frosty Blue</button>
+      </div>
+      <h3>Choose your age group</h3>
+      <div class="row" id="ages">
+        <button data-age="4-6" aria-pressed="false">🌱 Ages 4–6<br>6 rounds · No timer</button>
+        <button data-age="7-9" aria-pressed="false">⭐ Ages 7–9<br>8 rounds · No timer</button>
+        <button data-age="10+" aria-pressed="false">🌟 Ages 10+<br>12 rounds · Timed</button>
+      </div>
+      <button class="primary" id="start">Start Christmas Cheer ➜</button>
+      <p id="notice" role="status"></p>
+      <noscript>Please enable JavaScript to play. Theme and age choices are displayed above.</noscript>
+    </section>
+
+    <section id="game" class="card hidden">
+      <div class="row" style="justify-content: space-between; align-items: center;">
+        <span id="progress" class="badge"></span>
+        <span id="live-score" class="badge">⭐ 0 pts</span>
+        <span id="clock" class="badge hidden"></span>
+      </div>
+      <div id="visual" class="hero" aria-hidden="true">🦌 🎄 🧝</div>
+      <div id="passage" class="hidden"></div>
+      <h2 id="prompt"></h2>
+      <div id="options"></div>
+
+      <!-- Direct inline word reveal + Onscreen QWERTY keyboard -->
+      <div id="reveal-wrap" class="hidden">
+        <div class="mode-banner">🔍 Mystery Word Reveal — Type the remaining hidden letters!</div>
+        <div id="reveal-box" title="Tap keys below or type on a keyboard">
+          <input type="text" id="reveal-hidden-input" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Type the remaining letters">
+          <div id="reveal-slots" style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;"></div>
+        </div>
+        <div id="onscreen-kb" role="group" aria-label="Onscreen letter keyboard"></div>
+        <p class="reveal-hint">⌨️ Letters revealed for you are locked in—only type the missing ones!</p>
+      </div>
+
+      <!-- Unscramble letter tiles -->
+      <div id="unscramble-wrap" class="hidden">
+        <div class="mode-banner">🔀 Unscramble the Word — Tap the mixed-up letter tiles in the right order!</div>
+        <div id="unscramble-answer"></div>
+        <div id="unscramble-tiles"></div>
+        <div style="text-align:center;margin-top:8px;">
+          <button type="button" id="unscramble-clear" style="padding:8px 18px;min-height:40px;font-size:0.95rem;">↺ Clear Letters</button>
+        </div>
+      </div>
+
+      <!-- Sorter bins -->
+      <div id="sort" class="hidden">
+        <p>Drag an item into a box, or tap an item then tap a box.</p>
+        <div id="pool" class="row"></div>
+        <div class="row">
+          <div class="bin" data-bin="0" tabindex="0" role="button" aria-label="Christmas">
+            <strong>🎄 <span id="bin-label-0">Christmas</span></strong>
+          </div>
+          <div class="bin" data-bin="1" tabindex="0" role="button" aria-label="Everyday">
+            <strong>🏠 <span id="bin-label-1">Everyday</span></strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drag & Drop Matching (3 pairs per round) -->
+      <div id="match-wrap" class="hidden">
+        <div class="mode-banner">🧩 Match the 3 Words — Drag each word onto its match (or tap a word, then tap its match)!</div>
+        <div id="match-pool"></div>
+        <div id="match-targets"></div>
+      </div>
+
+      <div id="feedback" role="status" aria-live="polite"></div>
+      <div class="row">
+        <button id="skip" class="primary">Skip question ⏭</button>
+        <button id="next" class="primary hidden">Next round ➜</button>
+      </div>
+    </section>
+
+    <section id="end" class="card hidden">
+      <div class="end-banner">
+        <div class="hero" style="margin-bottom:4px;">🎅 🏆 🦌 🎄</div>
+        <div id="rank-badge" class="rank-pill">🌟 Festive Champion</div>
+        <h2 style="margin:6px 0;">Wonderful Christmas cheer!</h2>
+        <p id="summary-headline" style="font-size:1.15rem;font-weight:700;margin:8px 0;"></p>
+      </div>
+
+      <div class="score-box">
+        <div style="font-weight:800;text-transform:uppercase;letter-spacing:1px;font-size:0.85rem;opacity:0.8;">Final Holiday Score</div>
+        <div id="final-points" class="score-big">0 pts</div>
+        <div id="final-max" style="font-weight:700;opacity:0.8;">out of 0 possible points</div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div id="stat-solved" class="stat-val">0 / 0</div>
+            <div class="stat-lbl">✅ Answered</div>
+          </div>
+          <div class="stat-card">
+            <div id="stat-first" class="stat-val">0</div>
+            <div class="stat-lbl">⚡ First-Try Wins</div>
+          </div>
+          <div class="stat-card">
+            <div id="stat-accuracy" class="stat-val">0%</div>
+            <div class="stat-lbl">🎯 Accuracy</div>
+          </div>
+        </div>
+      </div>
+
+      <button id="again" class="primary">Play again 🎄</button>
+    </section>
+  </main>
+  <div id="celebration" aria-hidden="true"></div>
+
+  <script>
+    const POINTS_PER_CORRECT = 500;
+
+    // 68 Curated & Expanded Questions across 9 question types, tagged with `topic` to prevent
+    // overlapping/similar facts from repeating within or across back-to-back sessions.
+    const QUESTIONS = [
+      // --- MCQ (10 questions) ---
+      {"id": "q561", "type": "mcq", "topic": "santa-suit", "ages": ["4-6", "7-9"], "prompt": "What colour is Santa Claus’s suit?", "options": ["Red", "Green", "Blue", "Yellow"], "answerIdx": 0, "tip": "Santa is usually shown wearing a red suit with white trim.", "visual": ["🎅 🎄", "#FEE2E2"]},
+      {"id": "q562", "type": "mcq", "topic": "stockings", "ages": ["4-6", "7-9"], "prompt": "What do children hang by the fireplace for small gifts?", "options": ["Stockings", "Baskets", "Buckets", "Backpacks"], "answerIdx": 0, "tip": "Stockings are hung for Santa to fill with small treats.", "visual": ["🧦 🎁", "#DCFCE7"]},
+      {"id": "q563", "type": "mcq", "topic": "reindeer-sleigh", "ages": ["4-6", "7-9"], "prompt": "Which animal pulls Santa’s sleigh?", "options": ["Reindeer", "Penguin", "Camel", "Kangaroo"], "answerIdx": 0, "tip": "Santa’s sleigh is traditionally pulled by reindeer.", "visual": ["🦌 🛷", "#E0F2FE"]},
+      {"id": "q564", "type": "mcq", "topic": "tree-decor", "ages": ["4-6", "7-9"], "prompt": "What do many families decorate with lights and ornaments in December?", "options": ["A Christmas tree", "A football", "A bicycle", "A bookshelf"], "answerIdx": 0, "tip": "Christmas trees are decorated with lights, baubles and a star or angel.", "visual": ["🎄 ✨", "#DCFCE7"]},
+      {"id": "q565", "type": "mcq", "topic": "santa-who", "ages": ["4-6", "7-9"], "prompt": "What is the name of the jolly man in red who brings presents?", "options": ["Santa Claus", "The Easter Bunny", "The Tooth Fairy", "Captain Hook"], "answerIdx": 0, "tip": "Santa Claus is also known as Father Christmas in the UK.", "visual": ["🎅 🎁", "#FEE2E2"]},
+      {"id": "q596", "type": "mcq", "topic": "north-pole", "ages": ["7-9", "10+"], "prompt": "Where does Santa Claus live and have his toy workshop?", "options": ["The North Pole", "The Sahara Desert", "The South Pole", "Mount Everest"], "answerIdx": 0, "tip": "Legend says Santa’s workshop is at the snowy North Pole.", "visual": ["🧭 ❄️", "#E0F2FE"]},
+      {"id": "q597", "type": "mcq", "topic": "elves", "ages": ["7-9", "10+"], "prompt": "Who helps Santa make toys in his workshop?", "options": ["Elves", "Pirates", "Wizards", "Astronauts"], "answerIdx": 0, "tip": "Hardworking Christmas elves build and wrap toys all year.", "visual": ["🧝 🧸", "#DCFCE7"]},
+      {"id": "q598", "type": "mcq", "topic": "twelve-days", "ages": ["10+"], "prompt": "In the song 'The Twelve Days of Christmas', what is given on the fifth day?", "options": ["Five golden rings", "Five silver bells", "Five candy canes", "Five snowflakes"], "answerIdx": 0, "tip": "'Five golden rings' is the most famous line in the carol!", "visual": ["💍 🎶", "#FEF3C7"]},
+      {"id": "q599", "type": "mcq", "topic": "germany-tree", "ages": ["10+"], "prompt": "Which country started the tradition of putting up a decorated Christmas tree?", "options": ["Germany", "Australia", "Brazil", "Egypt"], "answerIdx": 0, "tip": "Germany began the tradition of decorated evergreen trees in the 16th century.", "visual": ["🇩🇪 🎄", "#DCFCE7"]},
+      {"id": "q600", "type": "mcq", "topic": "gingerbread-house", "ages": ["10+"], "prompt": "What spicy-sweet baked house is decorated with icing and sweets at Christmas?", "options": ["Gingerbread house", "Shortbread castle", "Pancake cabin", "Waffle tower"], "answerIdx": 0, "tip": "Gingerbread houses became popular in Germany after the fairy tale Hansel and Gretel.", "visual": ["🏠 🍬", "#FEF3C7"]},
+
+      // --- WORD REVEAL / TYPE ONLY UNREVEALED LETTERS (10 questions) ---
+      {"id": "q566", "type": "reveal", "topic": "candy-cane", "ages": ["7-9", "10+"], "prompt": "I am red and white, sweet and minty, and shaped like a hook.", "word": "CANDY CANE", "tip": "Candy canes are a classic Christmas treat.", "visual": ["🍬 🎄", "#FEE2E2"]},
+      {"id": "q567", "type": "reveal", "topic": "holly", "ages": ["7-9", "10+"], "prompt": "I am a small green plant with prickly leaves and red berries.", "word": "HOLLY", "tip": "Holly is a traditional Christmas decoration.", "visual": ["🌿 🍒", "#DCFCE7"]},
+      {"id": "q568", "type": "reveal", "topic": "snowman", "ages": ["7-9", "10+"], "prompt": "I am made of snow, with a carrot nose and a button smile.", "word": "SNOWMAN", "tip": "Snowmen are a fun winter symbol.", "visual": ["⛄ ❄️", "#E0F2FE"]},
+      {"id": "q569", "type": "reveal", "topic": "present", "ages": ["7-9", "10+"], "prompt": "I am wrapped in colourful paper and opened on Christmas morning.", "word": "PRESENT", "tip": "Presents are gifts given at Christmas.", "visual": ["🎁 🎀", "#FEE2E2"]},
+      {"id": "q570", "type": "reveal", "topic": "gingerbread", "ages": ["7-9", "10+"], "prompt": "I am a spiced biscuit shaped like a little person with icing buttons.", "word": "GINGERBREAD", "tip": "Gingerbread people are a favourite holiday bake.", "visual": ["🍪 🎄", "#FEF3C7"]},
+      {"id": "q581", "type": "reveal", "topic": "santa-who", "ages": ["7-9", "10+"], "prompt": "The jolly man in red who brings presents: ___", "word": "SANTA", "tip": "Santa Claus is also called Father Christmas.", "visual": ["🎅 🎁", "#FEE2E2"]},
+      {"id": "q582", "type": "reveal", "topic": "sleigh", "ages": ["7-9", "10+"], "prompt": "Santa’s snowy flying vehicle: ___", "word": "SLEIGH", "tip": "A sleigh is a large sled pulled by reindeer.", "visual": ["🛷 🦌", "#E0F2FE"]},
+      {"id": "q583", "type": "reveal", "topic": "stockings", "ages": ["7-9", "10+"], "prompt": "A long sock hung by the fireplace for small gifts: ___", "word": "STOCKING", "tip": "Stockings are hung by the fireplace.", "visual": ["🧦 🎁", "#DCFCE7"]},
+      {"id": "q584", "type": "reveal", "topic": "reindeer-sleigh", "ages": ["7-9", "10+"], "prompt": "The animals that pull Santa’s sleigh through the sky: ___", "word": "REINDEER", "tip": "Reindeer live in cold northern countries.", "visual": ["🦌 ❄️", "#E0F2FE"]},
+      {"id": "q585", "type": "reveal", "topic": "wreath", "ages": ["7-9", "10+"], "prompt": "A circle of green leaves and berries hung on the front door: ___", "word": "WREATH", "tip": "Christmas wreaths welcome guests at the door.", "visual": ["⭕ 🌿", "#DCFCE7"]},
+
+      // --- ODD ONE OUT (7 questions) ---
+      {"id": "q571", "type": "odd", "topic": "odd-decor", "ages": ["4-6", "7-9"], "prompt": "Which one is the odd one out?", "items": [{"icon": "🎄", "label": "Christmas tree"}, {"icon": "⭐", "label": "Gold star"}, {"icon": "🔔", "label": "Jingle bell"}, {"icon": "🍌", "label": "Banana"}], "answerIdx": 3, "tip": "A banana is a fruit, not a Christmas decoration.", "visual": ["🎄 ⭐ 🔔 🍌", "#FEF9C3"]},
+      {"id": "q572", "type": "odd", "topic": "odd-reindeer", "ages": ["4-6", "7-9", "10+"], "prompt": "Which one is the odd one out?", "items": [{"icon": "🦌", "label": "Dasher"}, {"icon": "🦌", "label": "Dancer"}, {"icon": "🦌", "label": "Rudolph"}, {"icon": "🐧", "label": "Penguin"}], "answerIdx": 3, "tip": "Dasher, Dancer, and Rudolph are Santa's reindeer; penguins don't fly!", "visual": ["🦌 🦌 🦌 🐧", "#E0F2FE"]},
+      {"id": "q573", "type": "odd", "topic": "odd-food", "ages": ["4-6", "7-9"], "prompt": "Which one is the odd one out?", "items": [{"icon": "🥧", "label": "Mince pie"}, {"icon": "🍪", "label": "Gingerbread"}, {"icon": "🍬", "label": "Candy cane"}, {"icon": "🍣", "label": "Sushi"}], "answerIdx": 3, "tip": "Sushi is not a traditional Christmas treat.", "visual": ["🥧 🍪 🍬 🍣", "#FEF3C7"]},
+      {"id": "q574", "type": "odd", "topic": "odd-carol", "ages": ["7-9", "10+"], "prompt": "Which one is the odd one out?", "items": [{"icon": "🔔", "label": "Jingle Bells"}, {"icon": "🕯️", "label": "Silent Night"}, {"icon": "🌟", "label": "Deck the Halls"}, {"icon": "🎂", "label": "Happy Birthday"}], "answerIdx": 3, "tip": "Happy Birthday is not a Christmas carol.", "visual": ["🔔 🕯️ 🌟 🎂", "#FEE2E2"]},
+      {"id": "q575", "type": "odd", "topic": "odd-winter", "ages": ["4-6", "7-9"], "prompt": "Which one is the odd one out?", "items": [{"icon": "❄️", "label": "Snowflake"}, {"icon": "⛄", "label": "Snowman"}, {"icon": "🛷", "label": "Sleigh"}, {"icon": "🏖️", "label": "Surfboard"}], "answerIdx": 3, "tip": "A surfboard is for summer beaches, not winter snow.", "visual": ["❄️ ⛄ 🛷 🏖️", "#E0E7FF"]},
+      {"id": "q601", "type": "odd", "topic": "odd-character", "ages": ["7-9", "10+"], "prompt": "Which one is the odd one out?", "items": [{"icon": "🎅", "label": "Santa Claus"}, {"icon": "🧝", "label": "Christmas Elf"}, {"icon": "⛄", "label": "Frosty"}, {"icon": "🎃", "label": "Jack-o'-lantern"}], "answerIdx": 3, "tip": "A Jack-o'-lantern belongs to Halloween, not Christmas.", "visual": ["🎅 🧝 ⛄ 🎃", "#FEE2E2"]},
+      {"id": "q602", "type": "odd", "topic": "reindeer-names", "ages": ["10+"], "prompt": "Which one is NOT one of Santa’s nine reindeer?", "items": [{"icon": "🦌", "label": "Comet"}, {"icon": "🦌", "label": "Cupid"}, {"icon": "🦌", "label": "Blitzen"}, {"icon": "🦌", "label": "Thunder"}], "answerIdx": 3, "tip": "Santa’s reindeer include Donner and Blitzen—not Thunder!", "visual": ["🦌 ✨ 🌙 ⚡", "#E0F2FE"]},
+
+      // --- FILL IN THE BLANK (7 questions) ---
+      {"id": "q576", "type": "blank", "topic": "reindeer-sleigh", "ages": ["4-6", "7-9"], "prompt": "Santa travels in a sleigh pulled by ___.", "bank": ["reindeer", "penguins", "camels", "kangaroos"], "answerIdx": 0, "tip": "Reindeer pull Santa’s sleigh.", "visual": ["🦌 🛷", "#E0F2FE"]},
+      {"id": "q577", "type": "blank", "topic": "stockings", "ages": ["4-6", "7-9"], "prompt": "Children hang ___ by the fireplace.", "bank": ["stockings", "buckets", "baskets", "helmets"], "answerIdx": 0, "tip": "Stockings are hung for Santa to fill.", "visual": ["🧦 🎁", "#DCFCE7"]},
+      {"id": "q578", "type": "blank", "topic": "tree-star", "ages": ["4-6", "7-9"], "prompt": "We place a shining ___ at the very top of the tree.", "bank": ["star", "carrot", "teapot", "pillow"], "answerIdx": 0, "tip": "A bright star or angel sits on top of the Christmas tree.", "visual": ["🎄 ⭐", "#DCFCE7"]},
+      {"id": "q579", "type": "blank", "topic": "santa-snacks", "ages": ["4-6", "7-9"], "prompt": "On Christmas Eve, children leave ___ for Santa.", "bank": ["milk and cookies", "sandwiches", "pizza", "salad"], "answerIdx": 0, "tip": "Many children leave milk and cookies for Santa.", "visual": ["🥛 🍪", "#FEF3C7"]},
+      {"id": "q580", "type": "blank", "topic": "rudolph", "ages": ["4-6", "7-9"], "prompt": "___ is the famous red-nosed reindeer.", "bank": ["Rudolph", "Dasher", "Dancer", "Prancer"], "answerIdx": 0, "tip": "Rudolph has a shiny red nose.", "visual": ["🦌 🔴", "#FEE2E2"]},
+      {"id": "q603", "type": "blank", "topic": "ribbon", "ages": ["7-9", "10+"], "prompt": "Before opening a present, you have to untie the ___.", "bank": ["ribbon", "shoelace", "jump rope", "necktie"], "answerIdx": 0, "tip": "Presents are often tied with a festive bow and ribbon.", "visual": ["🎁 🎀", "#FEE2E2"]},
+      {"id": "q604", "type": "blank", "topic": "boxing-day", "ages": ["10+"], "prompt": "The day after Christmas Day (December 26) is known in the UK as ___ Day.", "bank": ["Boxing", "Wrapping", "Tinsel", "Pudding"], "answerIdx": 0, "tip": "Boxing Day gets its name from Victorian Christmas boxes given to workers.", "visual": ["📅 🎁", "#DCFCE7"]},
+
+      // --- UNSCRAMBLE THE WORD (7 questions) ---
+      {"id": "q605", "type": "unscramble", "topic": "tree-star", "ages": ["4-6", "7-9"], "prompt": "Unscramble the letters to spell what shines at the top of the tree!", "word": "STAR", "tip": "A bright star shines at the top of the tree.", "visual": ["⭐ ✨", "#FEF9C3"]},
+      {"id": "q606", "type": "unscramble", "topic": "snow", "ages": ["4-6", "7-9"], "prompt": "Unscramble the letters to spell the cold white flakes that fall in winter!", "word": "SNOW", "tip": "Soft white snow falls in winter.", "visual": ["❄️ ⛄", "#E0F2FE"]},
+      {"id": "q607", "type": "unscramble", "topic": "elves", "ages": ["4-6", "7-9"], "prompt": "Unscramble the letters to spell one of Santa’s little helpers!", "word": "ELF", "tip": "Santa’s elves wrap presents in the workshop.", "visual": ["🧝 🎁", "#DCFCE7"]},
+      {"id": "q608", "type": "unscramble", "topic": "tinsel", "ages": ["7-9", "10+"], "prompt": "Unscramble the letters to spell a sparkly tree decoration!", "word": "TINSEL", "tip": "Sparkly tinsel drapes around the branches of a Christmas tree.", "visual": ["✨ 🎄", "#FEF3C7"]},
+      {"id": "q609", "type": "unscramble", "topic": "bauble", "ages": ["7-9", "10+"], "prompt": "Unscramble the letters to spell a round shiny ornament!", "word": "BAUBLE", "tip": "Colourful baubles hang from Christmas tree branches.", "visual": ["🔴 🎄", "#FEE2E2"]},
+      {"id": "q610", "type": "unscramble", "topic": "santa-snacks", "ages": ["7-9", "10+"], "prompt": "Unscramble the letters to spell a sweet snack left out for Santa!", "word": "COOKIE", "tip": "Santa loves crunchy chocolate chip cookies on Christmas Eve.", "visual": ["🍪 🥛", "#FEF3C7"]},
+      {"id": "q611", "type": "unscramble", "topic": "yuletide", "ages": ["10+"], "prompt": "Unscramble the letters to spell a traditional word for the Christmas season!", "word": "YULETIDE", "tip": "Yuletide is an old word for the Christmas season.", "visual": ["🕯️ 🎄", "#FEE2E2"]},
+
+      // --- TRUE OR FALSE (8 questions) ---
+      {"id": "q612", "type": "truefalse", "topic": "sleigh", "ages": ["4-6", "7-9"], "prompt": "True or False: Santa Claus travels in a submarine under the ocean.", "answerIdx": 1, "tip": "False! Santa flies through the sky in a sleigh pulled by reindeer.", "visual": ["🎅 🛷", "#E0F2FE"]},
+      {"id": "q613", "type": "truefalse", "topic": "candy-cane", "ages": ["4-6", "7-9"], "prompt": "True or False: Candy canes are traditionally striped red and white.", "answerIdx": 0, "tip": "True! Classic peppermint candy canes have red and white stripes.", "visual": ["🍬 ❤️", "#FEE2E2"]},
+      {"id": "q614", "type": "truefalse", "topic": "dec25", "ages": ["4-6", "7-9"], "prompt": "True or False: Christmas Day is celebrated on December 25th.", "answerIdx": 0, "tip": "True! December 25th is Christmas Day.", "visual": ["📅 🎄", "#DCFCE7"]},
+      {"id": "q615", "type": "truefalse", "topic": "reindeer-antlers", "ages": ["7-9", "10+"], "prompt": "True or False: Male and female reindeer both grow antlers.", "answerIdx": 0, "tip": "True! Reindeer are the only deer species where both males and females grow antlers.", "visual": ["🦌 🌿", "#E0F2FE"]},
+      {"id": "q616", "type": "truefalse", "topic": "jingle-bells-thanksgiving", "ages": ["7-9", "10+"], "prompt": "True or False: 'Jingle Bells' was originally written for Thanksgiving.", "answerIdx": 0, "tip": "True! James Lord Pierpont wrote it in 1857 for a Thanksgiving concert.", "visual": ["🔔 🎼", "#FEF3C7"]},
+      {"id": "q617", "type": "truefalse", "topic": "australia-summer", "ages": ["10+"], "prompt": "True or False: In Australia, Christmas happens during the middle of summer.", "answerIdx": 0, "tip": "True! Because Australia is in the Southern Hemisphere, December is sunny and warm.", "visual": ["☀️ 🎄", "#FEF9C3"]},
+      {"id": "q618", "type": "truefalse", "topic": "snowflake-points", "ages": ["10+"], "prompt": "True or False: Every real snowflake has eight identical points.", "answerIdx": 1, "tip": "False! Real snowflakes form hexagonal crystals with six sides or points.", "visual": ["❄️ 🔬", "#E0F2FE"]},
+      {"id": "q619", "type": "truefalse", "topic": "jingle-bells-space", "ages": ["10+"], "prompt": "True or False: 'Jingle Bells' was the first song ever played from space.", "answerIdx": 0, "tip": "True! Gemini 6 astronauts played it on a harmonica and sleigh bells in December 1965.", "visual": ["🚀 🔔", "#E0E7FF"]},
+
+      // --- SORTER (5 questions) ---
+      {"id": "q591", "type": "sorter", "topic": "sort-1", "ages": ["4-6", "7-9", "10+"], "prompt": "Sort each item into “Christmas” or “Everyday”.", "bins": ["Christmas", "Everyday"], "sortItems": [{"label": "Santa Claus", "icon": "🎅", "bin": 0}, {"label": "Soap", "icon": "🧼", "bin": 1}, {"label": "Christmas tree", "icon": "🎄", "bin": 0}, {"label": "School bag", "icon": "🎒", "bin": 1}], "tip": "Santa and the tree are Christmas items; the soap and school bag are everyday items.", "visual": ["🎅 🎄 🧼 🎒", "#FEE2E2"]},
+      {"id": "q592", "type": "sorter", "topic": "sort-2", "ages": ["4-6", "7-9", "10+"], "prompt": "Sort each item into “Christmas” or “Everyday”.", "bins": ["Christmas", "Everyday"], "sortItems": [{"label": "Reindeer", "icon": "🦌", "bin": 0}, {"label": "Bus", "icon": "🚌", "bin": 1}, {"label": "Candy cane", "icon": "🍬", "bin": 0}, {"label": "Toothpaste", "icon": "🦷", "bin": 1}], "tip": "Reindeer and candy canes are Christmas items; the bus and toothpaste are everyday items.", "visual": ["🦌 🚌 🍬 🦷", "#E0F2FE"]},
+      {"id": "q593", "type": "sorter", "topic": "sort-3", "ages": ["4-6", "7-9", "10+"], "prompt": "Sort each item into “Christmas” or “Everyday”.", "bins": ["Christmas", "Everyday"], "sortItems": [{"label": "Stocking", "icon": "🧦", "bin": 0}, {"label": "Plate", "icon": "🍽️", "bin": 1}, {"label": "Present", "icon": "🎁", "bin": 0}, {"label": "Chair", "icon": "🪑", "bin": 1}], "tip": "Stockings and presents are Christmas items; the plate and chair are everyday items.", "visual": ["🧦 🍽️ 🎁 🪑", "#DCFCE7"]},
+      {"id": "q594", "type": "sorter", "topic": "sort-4", "ages": ["4-6", "7-9", "10+"], "prompt": "Sort each item into “Christmas” or “Everyday”.", "bins": ["Christmas", "Everyday"], "sortItems": [{"label": "Snowman", "icon": "⛄", "bin": 0}, {"label": "Coffee mug", "icon": "☕", "bin": 1}, {"label": "Mince pie", "icon": "🥧", "bin": 0}, {"label": "Pen", "icon": "🖊️", "bin": 1}], "tip": "Snowmen and mince pies are Christmas items; the coffee mug and pen are everyday items.", "visual": ["⛄ ☕ 🥧 🖊️", "#E0F2FE"]},
+      {"id": "q595", "type": "sorter", "topic": "sort-5", "ages": ["4-6", "7-9", "10+"], "prompt": "Sort each item into “Christmas” or “Everyday”.", "bins": ["Christmas", "Everyday"], "sortItems": [{"label": "Wreath", "icon": "🌿", "bin": 0}, {"label": "Lamp", "icon": "💡", "bin": 1}, {"label": "Bauble", "icon": "🔴", "bin": 0}, {"label": "Notebook", "icon": "📓", "bin": 1}], "tip": "The wreath and bauble are Christmas items; the lamp and notebook are everyday items.", "visual": ["🌿 💡 🔴 📓", "#DCFCE7"]},
+
+      // --- DRAG & DROP MATCHING (6 questions across all age groups) ---
+      {
+        "id": "q625",
+        "type": "match",
+        "topic": "match-pic-1",
+        "ages": ["4-6", "7-9", "10+"],
+        "prompt": "Match each Christmas word to its picture!",
+        "pairs": [
+          {"word": "Snowman", "icon": "⛄", "clue": "Frosty snow friend"},
+          {"word": "Present", "icon": "🎁", "clue": "Wrapped gift box"},
+          {"word": "Jingle Bell", "icon": "🔔", "clue": "Shiny ringing bell"}
+        ],
+        "tip": "⛄ is a Snowman, 🎁 is a Present, and 🔔 is a Jingle Bell!",
+        "visual": ["⛄ 🎁 🔔", "#E0F2FE"]
+      },
+      {
+        "id": "q626",
+        "type": "match",
+        "topic": "match-pic-2",
+        "ages": ["4-6", "7-9", "10+"],
+        "prompt": "Match each holiday word to its picture!",
+        "pairs": [
+          {"word": "Reindeer", "icon": "🦌", "clue": "Antlered sleigh puller"},
+          {"word": "Candy Cane", "icon": "🍬", "clue": "Sweet minty treat"},
+          {"word": "Christmas Tree", "icon": "🎄", "clue": "Decorated evergreen"}
+        ],
+        "tip": "🦌 is a Reindeer, 🍬 is a Candy Cane, and 🎄 is a Christmas Tree!",
+        "visual": ["🦌 🍬 🎄", "#DCFCE7"]
+      },
+      {
+        "id": "q627",
+        "type": "match",
+        "topic": "match-pic-3",
+        "ages": ["4-6", "7-9", "10+"],
+        "prompt": "Match each festive character or item to its picture!",
+        "pairs": [
+          {"word": "Santa Claus", "icon": "🎅", "clue": "Jolly man in red"},
+          {"word": "Stocking", "icon": "🧦", "clue": "Fireplace gift sock"},
+          {"word": "Gold Star", "icon": "⭐", "clue": "Shines on the tree top"}
+        ],
+        "tip": "🎅 is Santa Claus, 🧦 is a Stocking, and ⭐ is a Gold Star!",
+        "visual": ["🎅 🧦 ⭐", "#FEE2E2"]
+      },
+      {
+        "id": "q628",
+        "type": "match",
+        "topic": "match-desc-1",
+        "ages": ["4-6", "7-9", "10+"],
+        "prompt": "Match each word to its simple description!",
+        "pairs": [
+          {"word": "Sleigh", "clue": "Santa’s snowy flying vehicle"},
+          {"word": "Elf", "clue": "Little helper who makes toys"},
+          {"word": "Wreath", "clue": "Green leaf circle hung on a door"}
+        ],
+        "tip": "Santa rides in a sleigh, elves make toys, and wreaths hang on doors!",
+        "visual": ["🛷 🧝 🌿", "#FEF3C7"]
+      },
+      {
+        "id": "q629",
+        "type": "match",
+        "topic": "match-desc-2",
+        "ages": ["4-6", "7-9", "10+"],
+        "prompt": "Match each Christmas treat or decoration to its description!",
+        "pairs": [
+          {"word": "Gingerbread", "clue": "Spiced biscuit shaped like a person"},
+          {"word": "Tinsel", "clue": "Sparkly strands draped on a tree"},
+          {"word": "Snowflake", "clue": "Tiny ice crystal falling from the sky"}
+        ],
+        "tip": "Gingerbread is a spiced biscuit, tinsel sparkles on trees, and snowflakes fall in winter!",
+        "visual": ["🍪 ✨ ❄️", "#E0E7FF"]
+      },
+      {
+        "id": "q630",
+        "type": "match",
+        "topic": "match-desc-3",
+        "ages": ["4-6", "7-9", "10+"],
+        "prompt": "Match each word to what it does at Christmas!",
+        "pairs": [
+          {"word": "Rudolph", "clue": "Reindeer with a glowing red nose"},
+          {"word": "Carol", "clue": "Festive song sung at Christmas"},
+          {"word": "Chimney", "clue": "How Santa climbs down into houses"}
+        ],
+        "tip": "Rudolph leads the sleigh, carols are Christmas songs, and Santa comes down the chimney!",
+        "visual": ["🦌 🎶 🏠", "#FEE2E2"]
+      },
+
+      // --- READING: SHORT PASSAGES FOR 7-9 (3 questions) ---
+      {"id": "q586", "type": "reading", "topic": "read-carrot", "ages": ["7-9"], "title": "Christmas Eve Treats", "passage": "On Christmas Eve, many children leave a plate of cookies and a glass of milk for Santa. They also leave a crunchy carrot for the reindeer. In the morning, they often find presents under the tree.", "prompt": "What do children leave for the reindeer?", "options": ["A crunchy carrot", "A slice of pizza", "A bowl of soup", "A banana"], "answerIdx": 0, "tip": "Children leave a carrot for Santa’s hard-working reindeer.", "visual": ["🥕 🦌", "#FEF3C7"]},
+      {"id": "q587", "type": "reading", "topic": "read-livingroom", "ages": ["7-9"], "title": "Decorating the Tree", "passage": "Many families decorate a Christmas tree with twinkling lights, colourful baubles, and a star or angel on top. The tree is usually placed in the living room so everyone can enjoy its glow.", "prompt": "Where is the Christmas tree usually placed?", "options": ["In the living room", "In the garage", "On the roof", "In the garden shed"], "answerIdx": 0, "tip": "Families place the tree in the living room so everyone can see it.", "visual": ["🎄 ⭐", "#DCFCE7"]},
+      {"id": "q590", "type": "reading", "topic": "read-kindness", "ages": ["7-9"], "title": "The Spirit of Kindness", "passage": "Christmas is a time when many people show extra kindness. They may donate food to local shelters, visit elderly neighbours, or make handmade cards for friends and family.", "prompt": "What is one way people show kindness at Christmas?", "options": ["Donating food to shelters", "Hiding indoors all month", "Forgetting their friends", "Breaking toys"], "answerIdx": 0, "tip": "Kindness at Christmas means sharing, helping, and caring for others.", "visual": ["❤️ 🎁", "#FEE2E2"]},
+
+      // --- READING: RICHER SHORT STORIES FOR 10+ LEARNERS (5 multi-paragraph stories) ---
+      {
+        "id": "q620",
+        "type": "reading",
+        "topic": "story-barnaby",
+        "ages": ["10+"],
+        "title": "The Midnight Workshop Mix-Up",
+        "passage": "Ten minutes before midnight on Christmas Eve, Barnaby the head elf noticed a problem. Two identical red velvet sacks were sitting beside the sleigh—one labelled 'London' and the other labelled 'North Pole Lost & Found'.\n\nInstead of panicking, Barnaby checked the weight of each sack. Knowing that the London sack held three hundred wooden trains while the Lost & Found sack held fluffy lost mittens, he lifted both bags and immediately swapped the lighter sack back onto the shelf just as Santa stepped outside.",
+        "prompt": "How did Barnaby figure out which sack belonged on Santa's sleigh?",
+        "options": ["He compared their weights because wooden trains are heavier than mittens", "He opened every wrapped gift inside", "He asked Rudolph to sniff the labels", "He counted the snowflakes on the velvet"],
+        "answerIdx": 0,
+        "tip": "Barnaby used deduction—wooden trains weigh much more than fluffy mittens!",
+        "visual": ["🧝 🎒 🚂", "#FEE2E2"]
+      },
+      {
+        "id": "q621",
+        "type": "reading",
+        "topic": "story-truce",
+        "ages": ["10+"],
+        "title": "The Christmas Truce of 1914",
+        "passage": "During the winter of 1914, in the middle of World War I, soldiers on opposite sides of the trenches in Belgium did something extraordinary. On Christmas Eve, German troops began placing small lit candles along the edges of their trenches and singing 'Stille Nacht' (Silent Night).\n\nAcross the frozen field, British soldiers joined in with English carols. By Christmas morning, soldiers from both sides climbed out into No Man's Land, shook hands, exchanged small gifts like buttons and chocolate, and even played impromptu games of football in the snow.",
+        "prompt": "What sparked the peaceful meeting between the soldiers on Christmas Eve?",
+        "options": ["Lighting candles and singing Christmas carols across the field", "A direct order from their generals", "A snowstorm that buried their tents", "A delivery of mail from home"],
+        "answerIdx": 0,
+        "tip": "Shared music and candlelight helped turn enemies into neighbours for Christmas.",
+        "visual": ["🕯️ ⚽ ❄️", "#E0F2FE"]
+      },
+      {
+        "id": "q622",
+        "type": "reading",
+        "topic": "story-card",
+        "ages": ["10+"],
+        "title": "The First Christmas Card",
+        "passage": "In 1843, a busy London museum director named Sir Henry Cole had a problem. In Victorian England, it was considered rude not to reply to holiday letters, and Henry had piles of unanswered mail sitting on his desk.\n\nTo save time while still sending warm wishes, he asked his artist friend John Callcott Horsley to design a single illustrated card with the message 'A Merry Christmas and a Happy New Year to You'. Henry had a thousand copies printed, creating the very first commercial Christmas cards.",
+        "prompt": "Why did Sir Henry Cole invent the first Christmas card in 1843?",
+        "options": ["To reply quickly and politely to a large pile of holiday letters", "Because he ran out of envelopes", "To raise money for a new museum roof", "Because he wanted to practice painting"],
+        "answerIdx": 0,
+        "tip": "Necessity is the mother of invention—Henry wanted a polite, quick way to send holiday greetings.",
+        "visual": ["✉️ 🎨 🎄", "#FEF3C7"]
+      },
+      {
+        "id": "q623",
+        "type": "reading",
+        "topic": "story-poinsettia",
+        "ages": ["10+"],
+        "title": "The Legend of the Poinsettia",
+        "passage": "In Mexico, bright red poinsettias are known as 'Flores de Nochebuena'—Flowers of the Holy Night. According to an old folk tale, a young girl named Pepita had no money to buy a gift for the Christmas Eve church service.\n\nEncouraged by her cousin, Pepita gathered a bouquet of simple green weeds from the roadside. When she placed them near the altar, the green leaves miraculously transformed into brilliant crimson blooms, reminding everyone that any gift given with love is precious.",
+        "prompt": "What lesson does the Mexican folk tale of Pepita and the poinsettia teach?",
+        "options": ["A humble gift given with love is just as valuable as an expensive one", "Only rare flowers can grow in winter", "Weeds should never be brought indoors", "Gold and silver are the best gifts"],
+        "answerIdx": 0,
+        "tip": "The story celebrates generosity from the heart rather than expensive presents.",
+        "visual": ["🌺 🕯️ ❤️", "#FEE2E2"]
+      },
+      {
+        "id": "q624",
+        "type": "reading",
+        "topic": "story-compass",
+        "ages": ["10+"],
+        "title": "The Reindeer Navigation Test",
+        "passage": "Before every global flight, Santa’s lead navigator, Comet, runs a compass check above the Arctic Circle. Near the magnetic North Pole, regular magnetic compasses spin wildly because the Earth's magnetic field points almost straight down.\n\nTo stay on course over icy oceans, Comet relies on the position of Polaris—the North Star—along with coastal lighthouses and Rudy's fog-piercing beacon nose.",
+        "prompt": "Why can't Santa's sleigh rely only on a regular magnetic compass near the North Pole?",
+        "options": ["The Earth's magnetic field points straight down there, making compasses spin", "The cold weather freezes the compass glass", "Rudolph's nose blocks the needle", "Compasses only work during the daytime"],
+        "answerIdx": 0,
+        "tip": "Near the magnetic poles, horizontal compass needles lose their directional pull and spin!",
+        "visual": ["🧭 🌟 🦌", "#E0E7FF"]
+      }
+    ];
+
+    const $ = id => document.getElementById(id);
+    let age = null, list = [], index = 0, done = false, first = true;
+    let correctCount = 0, firstTryCount = 0, points = 0;
+    let selected = null, placed = new Set(), timer = null, deadline = 0, revealTimer = null;
+    let revealLockedCount = 0, userTypedRemaining = '', revealPaused = false;
+    let scrambleLetters = [], scramblePicked = [];
+
+    // --- CROSS-SESSION HISTORY (prevents repeats across back-to-back students on the same tablet) ---
+    const HISTORY_KEY = 'christmas_cheer_seen_v1';
+    const MAX_HISTORY = 45; // remembers the last ~4-6 full games across any age group
+    let memorySeenIds = [];
+    let lastGameIds = new Set();
+    let lastGameTopics = new Set();
+
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) memorySeenIds = parsed;
+        }
+      } catch (e) { /* ignore storage restrictions */ }
+      return memorySeenIds;
+    }
+
+    function saveHistory(newQuestions) {
+      const newIds = newQuestions.map(q => q.id);
+      lastGameIds = new Set(newIds);
+      lastGameTopics = new Set(newQuestions.map(q => q.topic).filter(Boolean));
+
+      const current = loadHistory();
+      const filtered = current.filter(id => !lastGameIds.has(id));
+      memorySeenIds = [...filtered, ...newIds].slice(-MAX_HISTORY);
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(memorySeenIds));
+      } catch (e) { /* ignore storage restrictions */ }
+    }
+
+    const shuffle = a => {
+      a = a.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+
+    function getChoices(q) {
+      if (q.options) return q.options;
+      if (q.bank) return q.bank;
+      if (q.items) return q.items.map(it => `${it.icon} ${it.label}`);
+      if (q.type === 'truefalse') return ['🎄 True!', '❄️ False!'];
+      return null;
+    }
+
+    function getAnswerText(q) {
+      const choices = getChoices(q);
+      if (choices) return `Answer: ${choices[q.answerIdx]}.`;
+      if (q.sortItems) {
+        const b0 = q.sortItems.filter(x => x.bin === 0).map(x => `${x.icon} ${x.label}`).join(', ');
+        const b1 = q.sortItems.filter(x => x.bin === 1).map(x => `${x.icon} ${x.label}`).join(', ');
+        return `${q.bins[0]}: ${b0}; ${q.bins[1]}: ${b1}.`;
+      }
+      if (q.pairs) {
+        return 'Matches: ' + q.pairs.map(p => `${p.word} → ${p.icon ? p.icon + ' ' : ''}${p.clue}`).join('; ') + '.';
+      }
+      return `Answer: ${q.word}.`;
+    }
+
+    document.querySelectorAll('#themes button').forEach(b => b.onclick = () => {
+      document.body.dataset.theme = b.dataset.theme;
+      document.querySelectorAll('#themes button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+
+    document.querySelectorAll('#ages button').forEach(b => b.onclick = () => {
+      age = b.dataset.age;
+      document.querySelectorAll('#ages button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      $('notice').textContent = '';
+    });
+
+    function stop() {
+      clearInterval(timer);
+      clearInterval(revealTimer);
+      timer = null;
+      revealTimer = null;
+    }
+
+    function menu() {
+      stop();
+      ['game', 'end'].forEach(id => $(id).classList.add('hidden'));
+      $('menu').classList.remove('hidden');
+    }
+
+    $('home').onclick = () => {
+      if (!$('game').classList.contains('hidden') && !confirm('Leave this game and return to the menu?')) return;
+      menu();
+    };
+    $('again').onclick = menu;
+
+    // Shuffled Round-Robin Cycle with Cross-Session Deduplication & Topic Spacing:
+    // 1. Prioritizes questions never seen in recent sessions on this tablet.
+    // 2. Strictly excludes questions from the immediately preceding game (even across age switches).
+    // 3. Avoids repeating the same underlying topic within the same game or back-to-back games.
+    // 4. Cycles through all distinct question types before repeating any type.
+    function buildQuestionList(pool, targetCount) {
+      const history = loadHistory();
+      const seenOrder = new Map(history.map((id, idx) => [id, idx]));
+
+      const groups = {};
+      pool.forEach(q => (groups[q.type] ??= []).push(q));
+
+      Object.keys(groups).forEach(k => {
+        const unseen = shuffle(groups[k].filter(q => !seenOrder.has(q.id)));
+        const olderSeen = groups[k]
+          .filter(q => seenOrder.has(q.id) && !lastGameIds.has(q.id))
+          .sort((a, b) => seenOrder.get(a.id) - seenOrder.get(b.id));
+        const immediatePrev = shuffle(groups[k].filter(q => lastGameIds.has(q.id)));
+
+        // Pop order takes from the end of the array, so put highest priority at the end
+        groups[k] = [...immediatePrev, ...olderSeen.reverse(), ...unseen];
+      });
+
+      const result = [];
+      const usedTopicsThisGame = new Set();
+      let lastType = null;
+
+      function pickBestFromBucket(bucket) {
+        if (!bucket || !bucket.length) return null;
+        // Look from the end (highest priority) for one whose topic hasn't been used in this game or the last game
+        for (let i = bucket.length - 1; i >= 0; i--) {
+          const t = bucket[i].topic;
+          if (!t || (!usedTopicsThisGame.has(t) && !lastGameTopics.has(t))) {
+            return bucket.splice(i, 1)[0];
+          }
+        }
+        // Next best: topic not yet used in this game
+        for (let i = bucket.length - 1; i >= 0; i--) {
+          const t = bucket[i].topic;
+          if (!t || !usedTopicsThisGame.has(t)) {
+            return bucket.splice(i, 1)[0];
+          }
+        }
+        return bucket.pop();
+      }
+
+      while (result.length < targetCount) {
+        let cycleTypes = shuffle(Object.keys(groups).filter(k => groups[k].length > 0));
+        if (!cycleTypes.length) break;
+
+        if (cycleTypes.length > 1 && cycleTypes[0] === lastType) {
+          const swapIdx = 1 + Math.floor(Math.random() * (cycleTypes.length - 1));
+          [cycleTypes[0], cycleTypes[swapIdx]] = [cycleTypes[swapIdx], cycleTypes[0]];
+        }
+
+        for (const t of cycleTypes) {
+          if (result.length >= targetCount) break;
+          const picked = pickBestFromBucket(groups[t]);
+          if (picked) {
+            result.push(picked);
+            if (picked.topic) usedTopicsThisGame.add(picked.topic);
+            lastType = t;
+          }
+        }
+      }
+
+      saveHistory(result);
+      return result;
+    }
+
+    $('start').onclick = () => {
+      if (!age) {
+        $('notice').textContent = 'Please choose an age group first.';
+        return;
+      }
+      $('notice').textContent = '';
+      const pool = QUESTIONS.filter(q => !q.ages || q.ages.includes(age));
+      const count = { '4-6': 6, '7-9': 8, '10+': 12 }[age];
+      list = buildQuestionList(pool, count);
+
+      index = 0;
+      correctCount = 0;
+      firstTryCount = 0;
+      points = 0;
+      $('live-score').textContent = `⭐ 0 pts`;
+      $('menu').classList.add('hidden');
+      $('game').classList.remove('hidden');
+      load();
+    };
+
+    function celebrate() {
+      const c = $('celebration');
+      c.innerHTML = '';
+      for (let i = 0; i < 18; i++) {
+        let s = document.createElement('span');
+        s.textContent = ['🎅', '🦌', '🧝', '🎄', '🎁', '⭐', '❄️'][i % 7];
+        s.style.left = Math.random() * 95 + '%';
+        s.style.animationDelay = Math.random() * 0.4 + 's';
+        c.appendChild(s);
+      }
+      setTimeout(() => c.innerHTML = '', 3400);
+    }
+
+    function endRound(msg) {
+      done = true;
+      stop();
+      setOnscreenKbDisabled(true);
+      $('feedback').textContent = msg;
+      $('skip').classList.add('hidden');
+      $('next').textContent = index === list.length - 1 ? 'See Final Score 🎁' : 'Next round ➜';
+      $('next').classList.remove('hidden');
+    }
+
+    function complete() {
+      if (done) return;
+      correctCount++;
+      if (first) firstTryCount++;
+      points += POINTS_PER_CORRECT;
+      $('live-score').textContent = `⭐ ${points.toLocaleString()} pts`;
+
+      const tip = list[index].tip ? ` ${list[index].tip}` : '';
+      endRound(`🎉 +${POINTS_PER_CORRECT} pts! Well done!${tip}`);
+      celebrate();
+    }
+
+    function wrong(customMsg) {
+      first = false;
+      $('feedback').textContent = customMsg || '🧝 Good try! Have another go — you can do it.';
+    }
+
+    // --- ONSCREEN QWERTY KEYBOARD + TYPE-ONLY-UNREVEALED-LETTERS LOGIC ---
+    const KB_ROWS = [
+      ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+      ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+      ['BACK', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'ENTER']
+    ];
+
+    function buildOnscreenKeyboard() {
+      const kb = $('onscreen-kb');
+      kb.innerHTML = '';
+      KB_ROWS.forEach(row => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'kb-row';
+        row.forEach(key => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'kb-key';
+          if (key === 'BACK') {
+            btn.textContent = '⌫';
+            btn.classList.add('kb-wide');
+            btn.setAttribute('aria-label', 'Backspace');
+          } else if (key === 'ENTER') {
+            btn.textContent = '✔';
+            btn.classList.add('kb-wide', 'kb-submit');
+            btn.setAttribute('aria-label', 'Submit answer');
+          } else {
+            btn.textContent = key;
+          }
+          btn.onclick = e => {
+            e.preventDefault();
+            handleVirtualKey(key);
+          };
+          rowEl.appendChild(btn);
+        });
+        kb.appendChild(rowEl);
+      });
+    }
+
+    function setOnscreenKbDisabled(disabled) {
+      document.querySelectorAll('#onscreen-kb button').forEach(b => b.disabled = disabled);
+    }
+
+    function getCompactWord(word) {
+      return word.replace(/\s+/g, '').toUpperCase();
+    }
+
+    function startRevealTimer(q) {
+      clearInterval(revealTimer);
+      revealTimer = null;
+      const compact = getCompactWord(q.word);
+      revealTimer = setInterval(() => {
+        if (done || revealPaused || revealLockedCount >= compact.length - 1) {
+          clearInterval(revealTimer);
+          revealTimer = null;
+          return;
+        }
+        revealLockedCount++;
+        renderRevealSlots(q.word, false);
+      }, 1600);
+    }
+
+    function applyRemainingTyped(newRemaining) {
+      if (done) return;
+      const q = list[index];
+      if (!q || q.type !== 'reveal') return;
+
+      const compact = getCompactWord(q.word);
+      const remainingNeeded = Math.max(0, compact.length - revealLockedCount);
+      const cleaned = newRemaining.toUpperCase().replace(/[^A-Z]/g, '').slice(0, remainingNeeded);
+
+      revealInput.value = cleaned;
+      userTypedRemaining = cleaned;
+
+      if (userTypedRemaining.length > 0) {
+        revealPaused = true;
+        clearInterval(revealTimer);
+        revealTimer = null;
+      } else if (revealPaused) {
+        revealPaused = false;
+        startRevealTimer(q);
+      }
+
+      renderRevealSlots(q.word, false);
+
+      if (userTypedRemaining.length === remainingNeeded) {
+        checkRevealGuess();
+      }
+    }
+
+    function handleVirtualKey(key) {
+      if (done) return;
+      const q = list[index];
+      if (!q || q.type !== 'reveal') return;
+      if (key === 'BACK') {
+        applyRemainingTyped(userTypedRemaining.slice(0, -1));
+      } else if (key === 'ENTER') {
+        if (userTypedRemaining.length > 0) checkRevealGuess();
+      } else {
+        applyRemainingTyped(userTypedRemaining + key);
+      }
+    }
+
+    buildOnscreenKeyboard();
+
+    function renderRevealSlots(word, isComplete = false) {
+      const container = $('reveal-slots');
+      container.innerHTML = '';
+      const compactWord = getCompactWord(word);
+      let nonSpaceIdx = 0;
+
+      for (let i = 0; i < word.length; i++) {
+        const ch = word[i];
+        if (ch === ' ') {
+          const sp = document.createElement('span');
+          sp.className = 'char-space';
+          container.appendChild(sp);
+          continue;
+        }
+
+        const slot = document.createElement('span');
+        slot.className = 'char-slot';
+
+        if (isComplete) {
+          slot.textContent = ch;
+          slot.classList.add('good');
+        } else if (nonSpaceIdx < revealLockedCount) {
+          slot.textContent = ch;
+          slot.classList.add('clue');
+        } else {
+          const typedOffset = nonSpaceIdx - revealLockedCount;
+          if (typedOffset < userTypedRemaining.length) {
+            slot.textContent = userTypedRemaining[typedOffset];
+            slot.classList.add('typed');
+          } else {
+            slot.textContent = '•';
+          }
+          if (!done && typedOffset === userTypedRemaining.length && nonSpaceIdx < compactWord.length) {
+            slot.classList.add('cursor');
+          }
+        }
+
+        container.appendChild(slot);
+        nonSpaceIdx++;
+      }
+    }
+
+    function checkRevealGuess() {
+      if (done) return;
+      const q = list[index];
+      const compact = getCompactWord(q.word);
+      const fullAttempt = compact.slice(0, revealLockedCount) + userTypedRemaining;
+
+      if (fullAttempt === compact) {
+        $('reveal-hidden-input').disabled = true;
+        renderRevealSlots(q.word, true);
+        complete();
+      } else {
+        wrong('🧝 Not quite! Your typed letters cleared — try again.');
+        userTypedRemaining = '';
+        $('reveal-hidden-input').value = '';
+        revealPaused = false;
+        startRevealTimer(q);
+        renderRevealSlots(q.word, false);
+      }
+    }
+
+    const revealInput = $('reveal-hidden-input');
+    revealInput.addEventListener('input', () => {
+      applyRemainingTyped(revealInput.value);
+    });
+
+    document.addEventListener('keydown', e => {
+      if (done) return;
+      const q = list[index];
+      if (!q || q.type !== 'reveal' || $('game').classList.contains('hidden')) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleVirtualKey('BACK');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleVirtualKey('ENTER');
+      } else if (/^[a-zA-Z]$/.test(e.key)) {
+        e.preventDefault();
+        handleVirtualKey(e.key.toUpperCase());
+      }
+    });
+
+    // --- UNSCRAMBLE TILES LOGIC ---
+    function renderUnscramble(word, isComplete = false) {
+      const ansBox = $('unscramble-answer');
+      const tileBox = $('unscramble-tiles');
+      ansBox.innerHTML = '';
+      tileBox.innerHTML = '';
+
+      for (let i = 0; i < word.length; i++) {
+        const slot = document.createElement('span');
+        slot.className = 'char-slot';
+        if (isComplete) {
+          slot.textContent = word[i];
+          slot.classList.add('good');
+        } else if (i < scramblePicked.length) {
+          slot.textContent = scrambleLetters[scramblePicked[i]];
+          slot.classList.add('typed');
+        } else {
+          slot.textContent = '';
+          if (!done && i === scramblePicked.length) slot.classList.add('cursor');
+        }
+        ansBox.appendChild(slot);
+      }
+
+      scrambleLetters.forEach((ch, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tile-btn';
+        btn.textContent = ch;
+        btn.disabled = done || scramblePicked.includes(idx);
+        btn.onclick = () => {
+          if (done || scramblePicked.includes(idx)) return;
+          scramblePicked.push(idx);
+          const attempt = scramblePicked.map(i => scrambleLetters[i]).join('');
+          if (attempt.length === word.length) {
+            if (attempt === word) {
+              renderUnscramble(word, true);
+              complete();
+            } else {
+              wrong('🧝 Not quite right — the letters have reset so you can try again!');
+              scramblePicked = [];
+              renderUnscramble(word, false);
+            }
+          } else {
+            renderUnscramble(word, false);
+          }
+        };
+        tileBox.appendChild(btn);
+      });
+    }
+
+    $('unscramble-clear').onclick = () => {
+      if (done) return;
+      scramblePicked = [];
+      renderUnscramble(list[index].word, false);
+    };
+
+    // --- DRAG & DROP MATCHING LOGIC ---
+    function attemptMatch(targetIdx) {
+      if (done || selected === null || placed.has(selected) || placed.has(targetIdx)) return;
+      const q = list[index];
+      if (selected !== targetIdx) {
+        wrong('🧝 Not a match! Try pairing that word with a different card.');
+        return;
+      }
+
+      placed.add(targetIdx);
+      const wordBtn = $('mword' + targetIdx);
+      wordBtn.classList.remove('selected');
+      wordBtn.classList.add('placed');
+      wordBtn.disabled = true;
+      wordBtn.draggable = false;
+
+      const targetCard = $('mtarget' + targetIdx);
+      targetCard.classList.add('matched');
+      targetCard.querySelector('.match-slot-pill').textContent = `✅ ${q.pairs[targetIdx].word}`;
+
+      selected = null;
+      $('feedback').textContent = '';
+      if (placed.size === q.pairs.length) complete();
+    }
+
+    function revealAllMatches(q) {
+      q.pairs.forEach((p, idx) => {
+        const wordBtn = $('mword' + idx);
+        if (wordBtn) {
+          wordBtn.classList.remove('selected');
+          wordBtn.classList.add('placed');
+          wordBtn.disabled = true;
+          wordBtn.draggable = false;
+        }
+        const targetCard = $('mtarget' + idx);
+        if (targetCard) {
+          targetCard.classList.add('matched');
+          targetCard.querySelector('.match-slot-pill').textContent = `✅ ${p.word}`;
+        }
+      });
+    }
+
+    // --- LOAD ROUND ---
+    function load() {
+      stop();
+      done = false;
+      first = true;
+      selected = null;
+      placed = new Set();
+
+      const q = list[index];
+      $('progress').textContent = `Round ${index + 1} of ${list.length}`;
+      $('prompt').textContent = q.prompt;
+      $('feedback').textContent = '';
+      $('next').classList.add('hidden');
+      $('skip').classList.remove('hidden');
+      $('options').innerHTML = '';
+      ['sort', 'passage', 'reveal-wrap', 'unscramble-wrap', 'match-wrap'].forEach(id => $(id).classList.add('hidden'));
+
+      if (q.visual) {
+        $('visual').textContent = q.visual[0];
+        $('visual').style.backgroundColor = q.visual[1] || 'transparent';
+      }
+
+      if (q.passage) {
+        $('passage').innerHTML = '';
+        if (q.title) {
+          const h3 = document.createElement('h3');
+          h3.textContent = `📖 ${q.title}`;
+          $('passage').appendChild(h3);
+        }
+        q.passage.split('\n\n').forEach(para => {
+          const p = document.createElement('p');
+          p.textContent = para;
+          $('passage').appendChild(p);
+        });
+        $('passage').classList.remove('hidden');
+      }
+
+      const choices = getChoices(q);
+      if (choices) {
+        const ordered = q.type === 'truefalse'
+          ? choices.map((text, i) => ({ text, i }))
+          : shuffle(choices.map((text, i) => ({ text, i })));
+
+        ordered.forEach(o => {
+          let b = document.createElement('button');
+          if (q.type === 'truefalse') b.className = 'tf-btn';
+          b.textContent = o.text;
+          b.onclick = () => {
+            if (done) return;
+            if (o.i === q.answerIdx) {
+              b.classList.add('good');
+              complete();
+            } else {
+              wrong();
+              b.disabled = true;
+            }
+          };
+          $('options').appendChild(b);
+        });
+      } else if (q.type === 'sorter' && q.sortItems) {
+        $('sort').classList.remove('hidden');
+        $('pool').innerHTML = '';
+        if (q.bins) {
+          $('bin-label-0').textContent = q.bins[0];
+          $('bin-label-1').textContent = q.bins[1];
+        }
+        document.querySelectorAll('.bin button').forEach(b => b.remove());
+        shuffle(q.sortItems.map((it, i) => ({ it, i }))).forEach(({ it, i }) => {
+          let b = document.createElement('button');
+          b.id = 'item' + i;
+          b.textContent = `${it.icon} ${it.label}`;
+          b.draggable = true;
+          b.onclick = () => {
+            if (done || placed.has(i)) return;
+            selected = i;
+            document.querySelectorAll('#sort button').forEach(x => x.classList.toggle('selected', x === b));
+          };
+          b.ondragstart = e => {
+            if (done || placed.has(i)) {
+              e.preventDefault();
+              return;
+            }
+            selected = i;
+            e.dataTransfer.setData('text/plain', String(i));
+          };
+          $('pool').appendChild(b);
+        });
+      } else if (q.type === 'match' && q.pairs) {
+        $('match-wrap').classList.remove('hidden');
+        const poolEl = $('match-pool');
+        const targetsEl = $('match-targets');
+        poolEl.innerHTML = '';
+        targetsEl.innerHTML = '';
+
+        shuffle(q.pairs.map((p, i) => ({ p, i }))).forEach(({ p, i }) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.id = 'mword' + i;
+          btn.className = 'match-word';
+          btn.textContent = p.word;
+          btn.draggable = true;
+          btn.onclick = () => {
+            if (done || placed.has(i)) return;
+            selected = i;
+            document.querySelectorAll('#match-pool button').forEach(x => x.classList.toggle('selected', x === btn));
+          };
+          btn.ondragstart = e => {
+            if (done || placed.has(i)) {
+              e.preventDefault();
+              return;
+            }
+            selected = i;
+            document.querySelectorAll('#match-pool button').forEach(x => x.classList.toggle('selected', x === btn));
+            e.dataTransfer.setData('text/plain', String(i));
+          };
+          poolEl.appendChild(btn);
+        });
+
+        shuffle(q.pairs.map((p, i) => ({ p, i }))).forEach(({ p, i }) => {
+          const card = document.createElement('div');
+          card.id = 'mtarget' + i;
+          card.className = 'match-target';
+          card.tabIndex = 0;
+          card.setAttribute('role', 'button');
+          card.setAttribute('aria-label', `Match target: ${p.clue}`);
+
+          if (p.icon) {
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'match-clue-icon';
+            iconDiv.textContent = p.icon;
+            card.appendChild(iconDiv);
+          }
+
+          const clueDiv = document.createElement('div');
+          clueDiv.className = 'match-clue-text';
+          clueDiv.textContent = p.clue;
+          card.appendChild(clueDiv);
+
+          const slotPill = document.createElement('div');
+          slotPill.className = 'match-slot-pill';
+          slotPill.textContent = 'Drop word here';
+          card.appendChild(slotPill);
+
+          card.onclick = () => attemptMatch(i);
+          card.onkeydown = e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              attemptMatch(i);
+            }
+          };
+          card.ondragover = e => e.preventDefault();
+          card.ondrop = e => {
+            e.preventDefault();
+            const transferred = e.dataTransfer.getData('text/plain');
+            if (transferred !== '') selected = Number(transferred);
+            attemptMatch(i);
+          };
+
+          targetsEl.appendChild(card);
+        });
+      } else if (q.type === 'reveal' && q.word) {
+        $('reveal-wrap').classList.remove('hidden');
+        revealLockedCount = 0;
+        userTypedRemaining = '';
+        revealPaused = false;
+        revealInput.value = '';
+        revealInput.disabled = false;
+        setOnscreenKbDisabled(false);
+
+        renderRevealSlots(q.word, false);
+        startRevealTimer(q);
+      } else if (q.type === 'unscramble' && q.word) {
+        $('unscramble-wrap').classList.remove('hidden');
+        const letters = q.word.split('');
+        let scrambled = shuffle(letters);
+        while (scrambled.join('') === q.word && letters.length > 1) {
+          scrambled = shuffle(letters);
+        }
+        scrambleLetters = scrambled;
+        scramblePicked = [];
+        renderUnscramble(q.word, false);
+      }
+
+      $('clock').classList.toggle('hidden', age !== '10+');
+      if (age === '10+') {
+        deadline = Date.now() + 45000;
+        const tick = () => {
+          let left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+          $('clock').textContent = `⏱ ${left}s`;
+          if (!left && !done) {
+            first = false;
+            if (q.type === 'reveal') {
+              revealInput.disabled = true;
+              renderRevealSlots(q.word, true);
+            } else if (q.type === 'unscramble') {
+              renderUnscramble(q.word, true);
+            } else if (q.type === 'match') {
+              revealAllMatches(q);
+            }
+            endRound(`⏰ Time is up. ${getAnswerText(q)}`);
+          }
+        };
+        tick();
+        timer = setInterval(tick, 200);
+      }
+    }
+
+    function place(bin) {
+      if (done || selected === null || placed.has(selected)) return;
+      const q = list[index];
+      if (q.sortItems[selected].bin !== bin) {
+        wrong();
+        return;
+      }
+      let b = $('item' + selected);
+      b.classList.remove('selected');
+      b.classList.add('good');
+      b.disabled = true;
+      b.draggable = false;
+      document.querySelector(`[data-bin="${bin}"]`).appendChild(b);
+      placed.add(selected);
+      selected = null;
+      if (placed.size === q.sortItems.length) complete();
+    }
+
+    document.querySelectorAll('.bin').forEach(b => {
+      let bin = Number(b.dataset.bin);
+      b.onclick = () => place(bin);
+      b.onkeydown = e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          place(bin);
+        }
+      };
+      b.ondragover = e => e.preventDefault();
+      b.ondrop = e => {
+        e.preventDefault();
+        const transferred = e.dataTransfer.getData('text/plain');
+        if (transferred !== '') selected = Number(transferred);
+        place(bin);
+      };
+    });
+
+    $('skip').onclick = () => {
+      if (done) return;
+      first = false;
+      const q = list[index];
+      if (q.type === 'reveal') {
+        revealInput.disabled = true;
+        renderRevealSlots(q.word, true);
+      } else if (q.type === 'unscramble') {
+        renderUnscramble(q.word, true);
+      } else if (q.type === 'match') {
+        revealAllMatches(q);
+      }
+      endRound(`⏭ Skipped. ${getAnswerText(q)}`);
+    };
+
+    function showFinalScreen() {
+      stop();
+      $('game').classList.add('hidden');
+      $('end').classList.remove('hidden');
+
+      const totalRounds = list.length;
+      const maxPoints = totalRounds * POINTS_PER_CORRECT;
+      const pct = Math.round((correctCount / totalRounds) * 100);
+
+      let rank = '🎄 Festive Explorer';
+      if (pct === 100) rank = "🎅 Santa's Chief Elf";
+      else if (pct >= 75) rank = '🦌 Jolly Reindeer Captain';
+      else if (pct >= 50) rank = '⭐ North Pole Star';
+
+      $('rank-badge').textContent = rank;
+      $('summary-headline').textContent = `You've received a total score of ${points.toLocaleString()} points!`;
+      $('final-points').textContent = `${points.toLocaleString()} pts`;
+      $('final-max').textContent = `out of ${maxPoints.toLocaleString()} possible points (${POINTS_PER_CORRECT} pts per correct answer)`;
+      $('stat-solved').textContent = `${correctCount} / ${totalRounds}`;
+      $('stat-first').textContent = `${firstTryCount}`;
+      $('stat-accuracy').textContent = `${pct}%`;
+
+      celebrate();
+    }
+
+    $('next').onclick = () => {
+      if (!done) return;
+      index++;
+      if (index < list.length) {
+        load();
+      } else {
+        showFinalScreen();
+      }
+    };
+  </script>
+</body>
+</html>
